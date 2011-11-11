@@ -1,0 +1,175 @@
+<html>
+<head>
+    <style type="text/css">
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        #content {
+            margin: 0 auto;
+            width: 80%;
+            max-width: 1000px;
+            background-color: #333;
+            height: 100%;
+        }
+
+        #list {
+            width: 15%;
+            height: 100%;
+            color: black;
+            font-size: 10pt;
+            background-color: #d6dde6;
+            float: left;
+        }
+
+        #list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        #list ul li {
+            cursor: pointer;
+        }
+
+        #editor {
+            width: 85%;
+            height: 100%;
+            background-color: #272822;
+            float: right;
+        }
+
+        #editor textarea {
+            width: 100%;
+            height: 100%;
+            color: #f8f8f2;
+            border: 0;
+            background-color: #272822;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+    </style>
+    <script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+    <script type="text/javascript">
+        var Notes = {};
+
+        $.ajaxSetup({
+            dataType: 'json',
+            type: 'post'
+        });
+
+        Notes.register = function(username, password, success, error) {
+            $.ajax('/register', {
+                data: {'username': username, 'password': password},
+                success: success,
+                error: error
+            });
+        }
+        jQuery(function($) {
+        });
+
+        Notes.login = function(username, password, success, error) {
+            $.ajax('/login', {
+                data: {'username': username, 'password': password},
+                success: success,
+                error: error
+            });
+        }
+
+        Notes.logout = function(success, error) {
+            $.ajax('/logout', {
+                success: success,
+                error: error
+            });
+        }
+
+        Notes.list = function(success, error) {
+            $.ajax('/list', {
+                type: 'get',
+                success: success,
+                error: error
+            });
+        }
+
+        Notes.get = function(path, success, error) {
+            $.ajax('/note/'+ path, {
+                type: 'get',
+                success: success,
+                error: error
+            });
+        }
+
+        Notes.save = function(name, note, success, error) {
+            $.ajax('/save', {
+                data: {'name': name, 'note': note},
+                success: success,
+                error: error
+            });
+        }
+
+        var loadNote = function(name) {
+            Notes.get(name, function(data) {
+                $('#editor textarea').val(data);
+            },
+            function() {
+                alert('Failed to load note!');
+            });
+        }
+
+        var renderNotesList = function(items) {
+            $('#list').empty();
+            var list = $('<ul></ul>');
+            for (var i in items) {
+                var item = items[i];
+                var node = $('<li>'+ item +'</li>');
+                node.attr('data-path', item);
+
+                node.click(function() {
+                    loadNote( $(this).attr('data-path') );
+                });
+
+                list.append(node);
+            }
+            $('#list').append(list);
+        }
+
+        jQuery(function($) {
+            $('#save').click(function() {
+                var filename = prompt('Enter filename to save as');
+                if (filename) {
+                    Notes.save(filename, $('#editor textarea').val(),
+                        function() {
+                            Notes.list(function(data) {
+                                renderNotesList(data);
+                            }, function(){});
+                        },
+                        function() {
+                            alert('Save failed!');
+                        }
+                    )
+               } 
+            });
+            Notes.login('sponge', 'abc', function() {
+                Notes.list(function(data) {
+                    renderNotesList(data);
+                },
+                function() {
+                    alert('Failed to get list!');
+                });
+            }, function(){
+                alert('Failed to login!');
+            });
+        });
+    </script>
+</head>
+<body>
+<div id="content">
+    <div id="list"></div>
+    <div id="editor"><textarea></textarea></div>
+    <div id="controls"><button id="save">Save</button></div>
+</div>
+</body>
